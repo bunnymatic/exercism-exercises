@@ -25,6 +25,6 @@
   [message]
   (cond
     (bob/is-silence message) "Fine. Be that way!"
-    (bob/is-shouting message) "Woah, chill out!"
+    (bob/is-shouting message) "Whoa, chill out!"
     (bob/is-a-question message) "Sure."
     :else "Whatever."))

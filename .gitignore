@@ -1,5 +1,7 @@
 exercism
 java/**/.gradle
 java/**/build
+clojure/**/target
+clojure/**/.lein-failures
 dump/
 *~
