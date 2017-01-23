@@ -1,3 +1,38 @@
+defmodule MeetupDate do
+  defstruct year: 0, month: 0, day: 0, day_of_week: 0
+
+  def new( year, month, day ) do
+    get_date( year, month, day )
+  end
+
+  def to_erl_date(mdate) do
+    { mdate.year, mdate.month, mdate.day }
+  end
+
+  def days_in_month(mdate) do
+    Date.new(mdate.year, mdate.month, mdate.day)
+    |> elem(1)
+    |> Date.days_in_month
+  end
+
+  def add_days(mdate, days), do: get_date(%MeetupDate{ mdate | day: mdate.day + days})
+  def add_day(mdate), do: mdate |> add_days(1)
+  def add_week(mdate), do: mdate |> add_days(7)
+  def add_weeks(mdate, num), do: mdate |> add_days(num * 7)
+
+  defp get_date(mdate), do: get_date(mdate.year, mdate.month, mdate.day)
+  defp get_date(year, month, day) do
+    d = Date.new(year, month, day)
+    case d do
+      {:ok, date} ->
+        %MeetupDate{ year: year, month: month, day: day, day_of_week: date |> Date.day_of_week }
+      {:error,_} ->
+        IO.puts("ACK")
+    end
+  end
+
+end
+
 defmodule Meetup do
   @moduledoc """
   Calculate meetup dates.
@@ -9,6 +44,8 @@ defmodule Meetup do
 
   @type schedule :: :first | :second | :third | :fourth | :last | :teenth
 
+  require MeetupDate
+
   @doc """
   Calculate a meetup date.
 
@@ -17,79 +54,60 @@ defmodule Meetup do
   """
   @spec meetup(pos_integer, pos_integer, weekday, schedule) :: :calendar.date
   def meetup(year, month, weekday, schedule) do
-    date = get_date({year, month, 1})
     weekday_number = weekday |> numbered_day_of_week
-    date
+
+    # start at the first of the month
+    MeetupDate.new(year, month, 1)
     |> move_to_day_of_week(weekday_number)
-    |> move_to_scheduled(schedule)
+    |> move_to_schedule(schedule)
+    |> MeetupDate.to_erl_date
   end
 
-  def get_date({year, month, day}) do
-    d = Date.new(year, month, day)
-    case d do
-      {:ok, date} ->
-        date
-      {:error,_} ->
-        IO.puts("ACK")
+
+  defp move_to_day_of_week(mdate, weekday) do
+    cond do
+      (weekday == mdate.day_of_week) ->
+        mdate
+      true ->
+        mdate |> MeetupDate.add_day |> move_to_day_of_week(weekday)
     end
   end
 
-  defp move_to_day_of_week(date, weekday) do
-    erl_date = date |> Date.to_erl
-    move_to_day_of_week(erl_date, date |> Date.day_of_week, weekday)
+  defp move_to_schedule(mdate, schedule) when schedule == :teenth do
+    cond do
+      (mdate.day in 13..19) ->
+        mdate
+      true ->
+        mdate |> MeetupDate.add_week |> move_to_schedule(schedule)
+    end
   end
 
-  defp move_to_day_of_week(erl_date, current_day_of_week_number, desired_day_of_week_number) when current_day_of_week_number == desired_day_of_week_number do
-    get_date(erl_date)
-  end
-
-  defp move_to_day_of_week(erl_date, _, desired_day_of_week_number) do
-    date = add_day(erl_date)
-    erl_date = date |> Date.to_erl
-    dow = date |> Date.day_of_week
-    move_to_day_of_week(erl_date, dow, desired_day_of_week_number)
-  end
-
-  defp move_to_scheduled(date, schedule) when schedule == :last do
-    date = date |> add_weeks(3)
-    {_,_,day} = date |> Date.to_erl
-    if (((date |> Date.days_in_month) - day) >= 7) do
-      date |> add_weeks(1) |> Date.to_erl
+  defp move_to_schedule(mdate, schedule) when schedule == :last do
+    date = mdate |> MeetupDate.add_weeks(3)
+    if (((mdate |> MeetupDate.days_in_month) - date.day) >= 7) do
+      date |> MeetupDate.add_week
     else
-      date |> Date.to_erl
+      date
     end
   end
 
-  defp move_to_scheduled({year, month, day}, schedule) when (schedule == :teenth) and (not (day in 13..19)) do
-    date = add_week({year, month, day}) |> Date.to_erl
-    move_to_scheduled(date, schedule)
-  end
-
-  defp move_to_scheduled({year, month, day}, _), do: {year, month, day}
-
-  defp move_to_scheduled(date, schedule) when schedule == :teenth do
-    move_to_scheduled(date |> Date.to_erl, schedule)
-  end
-
-  defp move_to_scheduled(date, schedule) do
+  defp move_to_schedule(date, schedule) do
     case schedule do
       :first ->
         date
       :second ->
-        date |> add_weeks(1)
+        date |> MeetupDate.add_weeks(1)
       :third ->
-        date |> add_weeks(2)
+        date |> MeetupDate.add_weeks(2)
       :fourth ->
-        date |> add_weeks(3)
-    end |> Date.to_erl
+        date |> MeetupDate.add_weeks(3)
+    end
   end
 
-  defp add_day({year, month, day}), do: get_date({year, month, day+1})
-  defp add_week({year, month, day}), do: get_date({year, month, day+7})
-
-  defp add_weeks(date, num) do
-    {year, month, day} = date |> Date.to_erl
-    get_date({year, month, day + num * 7})
+  defp numbered_day_of_week(named_weekday) do
+    idx = [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
+    |> index_of(named_weekday)
+    idx + 1
   end
 
   defp index_of(list, element) do
@@ -99,11 +117,6 @@ defmodule Meetup do
     |> Enum.at(0)
   end
 
-  defp numbered_day_of_week(named_weekday) do
-    idx = [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
-    |> index_of(named_weekday)
-    idx + 1
-  end
 
 
 end
