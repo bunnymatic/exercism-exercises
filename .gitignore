@@ -2,3 +2,4 @@ exercism
 java/**/.gradle
 java/**/build
 dump/
+*~
