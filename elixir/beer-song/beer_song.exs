@@ -3,17 +3,17 @@ defmodule BeerSong do
   Get a single verse of the beer song
   """
   @spec verse(integer) :: String.t
-  def verse(number) when number > 2 do
-    current = number - 1
-    next = number - 2
+  def verse(number) when number > 1 do
+    current = number
+    next = number - 1
     "#{bottles(current)} of beer on the wall, #{bottles(current)} of beer.\nTake one down and pass it around, #{bottles(next)} of beer on the wall.\n"
   end
 
-  def verse(number) when number == 2 do
+  def verse(number) when number == 1 do
     "1 bottle of beer on the wall, 1 bottle of beer.\nTake it down and pass it around, no more bottles of beer on the wall.\n"
   end
 
-  def verse(number) when number == 1 do
+  def verse(number) when number == 0 do
     "No more bottles of beer on the wall, no more bottles of beer.\nGo to the store and buy some more, 99 bottles of beer on the wall.\n"
   end
 
@@ -29,7 +29,7 @@ defmodule BeerSong do
   end
 
   def lyrics() do
-    (100..1) |> lyrics
+    (99..0) |> lyrics
   end
 
 end
