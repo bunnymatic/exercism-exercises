@@ -1,5 +1,3 @@
-# coding: utf-8
-require 'byebug'
 class Game
 
   class BowlingError < StandardError; end
