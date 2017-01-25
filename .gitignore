@@ -5,3 +5,4 @@ clojure/**/target
 clojure/**/.lein-failures
 dump/
 *~
+**/.byebug_history
