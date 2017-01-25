@@ -5,6 +5,7 @@ class Game
   class BowlingError < StandardError; end
 
   class Frames
+
     def initialize(rolls)
       nrolls = rolls.length
       @frames = [].tap do |frames|
@@ -40,11 +41,10 @@ class Game
       @frames[(current_frame)..(current_frame+1)].map(&:rolls).flatten.compact.first(2)
     end
 
-    def private
-      def select(first, last)
-
-      end
+    def to_s
+      (!valid? ? "INVALID:" : "") + @frames.map{|f| f.to_s}.join(" ")
     end
+
   end
 
   class Frame
@@ -57,54 +57,74 @@ class Game
       @rolls = [args].flatten
     end
 
-    def first
-      rolls[0]
+    def valid?
+      return false if @rolls.map(&:to_i).any?{|roll| !roll.between?(0,10)}
+      if is_last?
+        is_last_frame_valid?
+      else
+        is_strike? || (total <= 10 && !second.nil?)
+      end
     end
-    def second
-      rolls[1]
-    end
-    def bonus
-      rolls[2]
+
+    def to_s
+      s = valid? ? "" : "N/A"
+      if !is_last?
+        s += "#{@frame}:[%s,%s]" % [ first, second.inspect ]
+        return "X#{s}" if is_strike?
+        return "/#{s}" if is_spare?
+      else
+        s += "10:#{rolls.inspect}"
+      end
+      s
     end
 
     def is_last?
       frame == 10
     end
 
+    def is_strike?
+      first == 10
+    end
+
+    def is_spare?
+      (first + second.to_i) == 10
+    end
+
     def total
       is_last? ? rolls.inject(:+) : (first + second.to_i)
     end
 
-    def valid?
-      if is_last?
-        !second.nil? &&
-          (
-            (is_strike? && !bonus.nil?) ||
-            (is_spare? && !bonus.nil?) ||
-            ((second < 10) && (second.to_i + bonus.to_i <= 10))
-          )
-      else
-        is_strike? || (total <= 10 && !second.nil?)
-      end
+    private
+    def first
+      rolls[0]
     end
 
-    def is_strike?
-      first == 10
+    def second
+      rolls[1]
     end
-    def is_spare?
-      total == 10
+
+    def bonus
+      rolls[2]
     end
-    def to_s
-      return "N/A" if !valid?
-      if !is_last?
-        s = "#{@frame}:[%s,%s]" % [ first, second.inspect ]
-        return "X#{s}" if is_strike?
-        return "/#{s}" if is_spare?
-      else
-        s = "10:#{rolls.inspect}"
-      end
-      s
+
+    def is_last_frame_valid?
+      (is_strike? && includes_strike_bonus_rolls?) ||
+        (is_spare? && includes_bonus_rolls?) ||
+        (!is_spare? && !is_strike? && has_only_2_rolls?)
     end
+
+    def has_only_2_rolls?
+      !second.nil? && bonus.nil?
+    end
+
+    def includes_bonus_rolls?
+      !second.nil? && !bonus.nil?
+    end
+
+    def includes_strike_bonus_rolls?
+      includes_bonus_rolls? && ((second.to_i == 10) || (second.to_i + bonus.to_i) <= 10)
+    end
+
   end
 
   def initialize
@@ -113,12 +133,13 @@ class Game
 
   def roll(pins)
     @rolls << pins
-    @frames = process_rolls
   end
 
   def score
-    raise BowlingError.new("No frames to score") if @frames.nil?
+    raise BowlingError.new("No frames to score") if @rolls.empty?
+    @frames = Frames.new(@rolls)
     raise BowlingError.new("There are invalid frames") unless @frames.valid?
+
     (1..10).inject(0) do |total, frame_number|
       total += compute_score(frame_number)
     end
@@ -144,11 +165,6 @@ class Game
     else
       next_rolls.first.to_i
     end
-
-  end
-
-  def process_rolls
-    Frames.new(@rolls)
   end
 
 end
