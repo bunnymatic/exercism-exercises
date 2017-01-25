@@ -12,7 +12,7 @@ defmodule LuhnTest do
     assert Luhn.checksum("4913") == 22
   end
 
-  @tag :pending
+  #@tag :pending
   test "checksum again" do
     assert Luhn.checksum("201773") == 21
   end
