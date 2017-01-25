@@ -12,33 +12,13 @@ class Game
     @rolls << pins
   end
 
-  # def frames
-  #   [].tap do |frames|
-  #     index = 0
-  #     loop do
-  #       break unless index < @rolls.length
-  #       if @rolls[index] == 10
-  #         frames << [@rolls[index]]
-  #         index += 1
-  #       else
-  #         frames << [@rolls[index], @rolls[index+1]]
-  #         index += 2
-  #       end
-  #     end
-  #   end
-  # end
-
-  def validate_rolls
-    raise BowlingError.new("Can't have negative pins") if @rolls.any?{|pins| pins.nil? || !pins.between?(0,10)}
-  end
-
   def score
     validate_rolls
     score = 0
     frame_scores = []
     index = 0
     (1..10).each do |frame|
-      raise BowlingError.new("Not enought") if @rolls.length < index
+      raise BowlingError.new("Not enough") if @rolls.length < index
 
       if is_a_strike?(index)
         # strike
@@ -61,9 +41,14 @@ class Game
   end
 
   private
+  def validate_rolls
+    raise BowlingError.new("Can't have negative pins") if @rolls.any?{|pins| pins.nil? || !pins.between?(0,10)}
+  end
+
   def is_a_strike?(roll)
     @rolls[roll] == 10
   end
+
   def is_a_spare?(roll)
     raise BowlingError.new("not enough rolls") unless roll + 1 < @rolls.length
     @rolls[roll] + @rolls[roll+1] == 10
