@@ -4,76 +4,151 @@ class Game
 
   class BowlingError < StandardError; end
 
+  class Frames
+    def initialize(rolls)
+      nrolls = rolls.length
+      @frames = [].tap do |frames|
+        index = 0
+        loop do
+          break unless index < nrolls
+          current_frame = frames.length + 1
+          if current_frame < 10
+            if rolls[index] == 10
+              frames << Frame.new(current_frame, rolls[index])
+              index += 1
+            else
+              frames << Frame.new(current_frame, rolls[index], rolls[index+1])
+              index += 2
+            end
+          else
+            frames << Frame.new(current_frame, rolls[index..-1])
+            index += 3
+          end
+        end
+      end
+    end
+
+    def valid?
+      @frames.all?{|f| f.valid?} && @frames.length == 10
+    end
+
+    def get(frame)
+      @frames[frame-1]
+    end
+
+    def next_rolls(current_frame)
+      @frames[(current_frame)..(current_frame+1)].map(&:rolls).flatten.compact.first(2)
+    end
+
+    def private
+      def select(first, last)
+
+      end
+    end
+  end
+
+  class Frame
+
+    attr_reader :rolls
+    attr_reader :frame
+
+    def initialize(frame, *args)
+      @frame = frame
+      @rolls = [args].flatten
+    end
+
+    def first
+      rolls[0]
+    end
+    def second
+      rolls[1]
+    end
+    def bonus
+      rolls[2]
+    end
+
+    def is_last?
+      frame == 10
+    end
+
+    def total
+      is_last? ? rolls.inject(:+) : (first + second.to_i)
+    end
+
+    def valid?
+      if is_last?
+        !second.nil? &&
+          (
+            (is_strike? && !bonus.nil?) ||
+            (is_spare? && !bonus.nil?) ||
+            ((second < 10) && (second.to_i + bonus.to_i <= 10))
+          )
+      else
+        is_strike? || (total <= 10 && !second.nil?)
+      end
+    end
+
+    def is_strike?
+      first == 10
+    end
+    def is_spare?
+      total == 10
+    end
+    def to_s
+      return "N/A" if !valid?
+      if !is_last?
+        s = "#{@frame}:[%s,%s]" % [ first, second.inspect ]
+        return "X#{s}" if is_strike?
+        return "/#{s}" if is_spare?
+      else
+        s = "10:#{rolls.inspect}"
+      end
+      s
+    end
+  end
+
   def initialize
     @rolls = []
   end
 
   def roll(pins)
     @rolls << pins
+    @frames = process_rolls
   end
 
   def score
-    validate_rolls
-    score = 0
-    frame_scores = []
-    index = 0
-    (1..10).each do |frame|
-      raise BowlingError.new("Not enough") if @rolls.length < index
-
-      if is_a_strike?(index)
-        # strike
-        score += process_strike(index, frame)
-        frame_scores << score
-        index += (frame == 10 ? 3 : 1)
-      elsif is_a_spare?(index)
-        #spare
-        score += process_spare(index, frame)
-        frame_scores << score
-        index += (frame == 10 ? 3 : 2)
-      else
-        score += process_frame(index, frame)
-        frame_scores << score
-        index += 2
-      end
+    raise BowlingError.new("No frames to score") if @frames.nil?
+    raise BowlingError.new("There are invalid frames") unless @frames.valid?
+    (1..10).inject(0) do |total, frame_number|
+      total += compute_score(frame_number)
     end
-    raise BowlingError.new("Too many rolls") if @rolls.length > index
-    score
   end
 
   private
-  def validate_rolls
-    raise BowlingError.new("Can't have negative pins") if @rolls.any?{|pins| pins.nil? || !pins.between?(0,10)}
-  end
-
-  def is_a_strike?(roll)
-    @rolls[roll] == 10
-  end
-
-  def is_a_spare?(roll)
-    raise BowlingError.new("not enough rolls") unless roll + 1 < @rolls.length
-    @rolls[roll] + @rolls[roll+1] == 10
-  end
-
-  def process_strike(index, frame)
-    next_rolls = [@rolls[index+1],@rolls[index+2]]
-    if frame == 10
-      raise BowlingError.new("Need to fill out the last frame") if next_rolls.any?(&:nil?)
-      raise BowlingError.new("Invalid score for final frames") if next_rolls.first < 10 && next_rolls.inject(:+) > 10
+  def compute_score(frame_number)
+    current_frame = @frames.get(frame_number)
+    if current_frame.is_last?
+      current_frame.total
+    elsif current_frame.is_strike? || current_frame.is_spare?
+      current_frame.total + compute_bonus(frame_number)
+    else
+      current_frame.total
     end
-    10 + next_rolls.inject(:+)
   end
 
-  def process_spare(index, frame)
-    raise BowlingError.new("Need to fill out the last frame") if frame == 10 && @rolls[index+2].nil?
-    10 + @rolls[index+2]
+  def compute_bonus(frame_number)
+    current_frame = @frames.get(frame_number)
+    next_rolls = @frames.next_rolls(frame_number)
+    if current_frame.is_strike?
+      next_rolls.map(&:to_i).inject(:+)
+    else
+      next_rolls.first.to_i
+    end
+
   end
 
-  def process_frame(index, frame)
-    scores = [@rolls[index],@rolls[index+1]]
-    raise BowlingError.new("Invalid") if scores.any?(&:nil?)
-    score = scores.inject(:+)
-    raise BowlingError.new("Invalid frame") if !score.between?(0,10)
-    score
+  def process_rolls
+    Frames.new(@rolls)
   end
 
 end
