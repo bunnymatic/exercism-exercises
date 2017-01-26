@@ -6,3 +6,6 @@ clojure/**/.lein-failures
 dump/
 *~
 **/.byebug_history
+\#*
+*~
+\**
