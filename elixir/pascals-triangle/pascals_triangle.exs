@@ -4,13 +4,21 @@ defmodule PascalsTriangle do
   with the given height
   """
   @spec rows(integer) :: [[integer]]
-  def rows(num) when num === 1, do: [[1]]
   def rows(num) do
-    previous_row = rows(num-1)
-    (2..num)
-    |> Enum.reduce(rows(index-1), fn(index, acc) ->
-      IO.puts("#{num} #{index} #{inspect(rows(index-1))}")
-      acc ++ [ rows(index-1) * (num - index) / (index + 1) ]
+    (1..num)
+    |> Enum.map(&row/1)
+  end
+
+  defp row(power) when power == 1, do: [1]
+  defp row(power) do
+    binomial_coefficients(power-1)
+  end
+
+  defp binomial_coefficients(power) do
+    {_, coefficients} = (1..power)
+    |> Enum.reduce({1, []}, fn(cc, {acc, result}) ->
+      { acc * (power - cc + 1) / cc, result ++ [ round(acc) ] }
     end)
+    (coefficients ++ [1])
   end
 end
