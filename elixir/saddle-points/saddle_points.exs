@@ -31,40 +31,40 @@ defmodule Matrix do
   """
   @spec saddle_points(String.t()) :: [{integer, integer}]
   def saddle_points(str) do
-    str
+    row_candidates = str
     |> rows
-    |> inspector("Matrix")
     |> candidates_by_row
-    |> validate_candidates(str)
+    col_candidates = str
+    |> columns
+    |> candidates_by_column
+    row_candidates |> intersect_with(col_candidates)
   end
 
-  defp valid_candidates(candidates, columns) do
-    IO.inspect(columns)
-    IO.inspect(candidates)
+  defp intersect_with(list1, list2) do
+    tmp = list1 -- list2
+    list1 -- tmp
   end
 
   defp candidates_by_row(matrix_rows) do
     matrix_rows
     |> Enum.with_index
-    |> Enum.map(fn({row, col_index}) ->
-      { col_index, row |> index_of(row |> Enum.max) }
+    |> Enum.map(fn({row, row_index}) ->
+      row
+      |> matches( row |> Enum.max )
+      |> Enum.map(&({row_index, &1}))
     end)
+    |> List.flatten
   end
 
-  defp validate_candidates(candidates,str) do
-    matrix_columns = str |> columns
-    candidates
-    |> Enum.filter(fn(candidate) ->
-      IO.puts("Checking candidate #{inspect(candidate)}")
-      { col_index, row_index } = candidate
-      matrix_columns
-      |> inspector("Cols")
-      |> Enum.map(fn(col) ->
-        col_index === (col |> index_of(col |> Enum.min))
-      end)
-      |> inspector("ColCheck")
-      |> Enum.any?(&(&1))
+  defp candidates_by_column(matrix_cols) do
+    matrix_cols
+    |> Enum.with_index
+    |> Enum.map(fn({col, col_index}) ->
+      col
+      |> matches( col |> Enum.min )
+      |> Enum.map(&({&1, col_index}))
     end)
+    |> List.flatten
   end
 
   @spec transpose([[integer]]) :: [[integer]]
@@ -73,13 +73,10 @@ defmodule Matrix do
     [ matrix |> Enum.map(&hd/1) | transpose( matrix |> Enum.map(&tl/1) ) ]
   end
 
-  defp index_of(list, element) do
+  defp matches(list, element) do
     list
     |> Enum.with_index
     |> Enum.filter_map(fn {x, _} -> x == element end, fn {_, i} -> i end)
-    |> Enum.at(0)
   end
-
-  def inspector(v,s), do: (IO.puts("[#{s}] #{inspect(v)}"); v)
 
 end

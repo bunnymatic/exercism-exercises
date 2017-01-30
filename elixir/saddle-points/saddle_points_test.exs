@@ -3,7 +3,7 @@ if !System.get_env("EXERCISM_TEST_EXAMPLES") do
 end
 
 ExUnit.start
-ExUnit.configure exclude: :pending, trace: true
+# ExUnit.configure exclude: :pending, trace: true
 
 defmodule SaddlePointsTest do
   use ExUnit.Case
@@ -44,13 +44,13 @@ defmodule SaddlePointsTest do
     assert Enum.at(columns, 1) == [1903, 3, 4]
   end
 
-  # @tag :pending
+  @tag :pending
   test "no saddle point" do
     saddle_points = Matrix.saddle_points("2 1\n1 2")
     assert saddle_points == []
   end
 
-  # @tag :pending
+  @tag :pending
   test "a saddle point" do
     saddle_points = Matrix.saddle_points("1 2\n3 4")
     assert saddle_points == [{0, 1}]
@@ -62,7 +62,7 @@ defmodule SaddlePointsTest do
     assert saddle_points == [{2, 2}]
   end
 
-  # @tag :pending
+  @tag :pending
   test "multiple saddle points" do
     saddle_points = Matrix.saddle_points("4 5 4\n3 5 5\n1 5 4")
     assert saddle_points == [{0, 1}, {1, 1}, {2, 1}]
