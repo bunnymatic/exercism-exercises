@@ -13,11 +13,13 @@ Isogram = (function() {
   }
 
   function Isogram(word) {
-    this.word = word;
+    var cleanWord = word.toLowerCase().replace(/[\s\d!#@|$%|^|&|*|(|)-_\[\{\]\}]+/g, '');
+    this.letters = cleanWord.split("")
   };
 
+
   Isogram.prototype.isIsogram = function() {
-    var hist = histogram(this.word.split(""));
+    var hist = histogram(this.letters);
     for(var k in hist) {
       v = hist[k]
       if (v != 1) {
