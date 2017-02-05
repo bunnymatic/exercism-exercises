@@ -14,7 +14,7 @@ defmodule Histogram do
   # end
   def histogram(chars) when is_list(chars) do
     chars |> Enum.reduce(%{}, fn(letter, memo) ->
-      memo |> Map.update(letter, 0, &(&1 + 1))
+      memo |> Map.put(letter, Map.get(memo, letter, 0) + 1)
     end)
   end
 end
@@ -31,7 +31,10 @@ defmodule Isogram do
   """
   @spec isogram?(String.t) :: boolean
   def isogram?(sentence) do
-    sentence |> cleanse |> histogram |> inspector("H") |> Enum.all?(fn({_,v}) -> v === 1 end)
+    sentence
+    |> cleanse
+    |> histogram
+    |> Enum.all?(fn({_,v}) -> v === 1 end)
   end
 
   defp cleanse(sentence) do
