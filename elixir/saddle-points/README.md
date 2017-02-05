@@ -1,6 +1,6 @@
 # Saddle Points
 
-Write a program that detects saddle points in a matrix.
+Detect saddle points in a matrix.
 
 So say you have a matrix like so:
 

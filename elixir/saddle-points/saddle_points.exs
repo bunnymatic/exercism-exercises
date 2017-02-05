@@ -61,7 +61,7 @@ defmodule Matrix do
     |> Enum.with_index
     |> Enum.map(fn({col, col_index}) ->
       col
-      { row_index, col_index } = candidate
+      |> matches( col |> Enum.min )
       |> Enum.map(&({&1, col_index}))
     end)
     |> List.flatten

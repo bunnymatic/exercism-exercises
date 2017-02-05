@@ -8,7 +8,7 @@ ExUnit.start
 defmodule SaddlePointsTest do
   use ExUnit.Case
 
-  @tag :pending
+  # @tag :pending
   test "extract rows" do
     rows = Matrix.rows("1 2\n10 20")
     assert rows == [[1, 2], [10, 20]]
