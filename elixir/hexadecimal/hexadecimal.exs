@@ -7,7 +7,7 @@ defmodule Hexadecimal do
 
     ## Examples
 
-      iex> Hexadecimal.to_decim2al("invalid")
+      iex> Hexadecimal.to_decimal("invalid")
       0
 
       iex> Hexadecimal.to_decimal("af")
