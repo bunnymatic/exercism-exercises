@@ -20,9 +20,13 @@ class Bst
 
   protected
   def fetch(result = [])
-    @left.fetch(result) if @left
-    @right.fetch(result) if @right
+    if @left
+      @left.fetch(result)
+    end
     result << @data
+    if @right
+      @right.fetch(result) if @right
+    end
     result
   end
 
@@ -43,9 +47,5 @@ class Bst
     end
   end
 
-
-end
-
-module BookKeeping
   VERSION = 1
 end
